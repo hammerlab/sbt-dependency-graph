@@ -4,7 +4,7 @@
 
 Visualize your project's dependencies.
 
-This is a fork of [jrudolph/sbt-dependency-graph](https://github.com/jrudolph/sbt-dependency-graph) to quickly provide a public release of some `dependencyTree` features (filtering, writing to file); the `org.hammerlab` Maven coordinates below include these.
+This is a fork of [jrudolph/sbt-dependency-graph](https://github.com/jrudolph/sbt-dependency-graph) to quickly provide a public release of some features (`dependencyTree` filtering and writing to file, `dependencyBrowseTree`); the `org.hammerlab` Maven coordinates below include these.
 
 ## Usage Instructions
 
@@ -13,7 +13,7 @@ install it as a [global plugin] so that you can use it in any SBT project withou
 this, add the plugin dependency to `~/.sbt/0.13/plugins/plugins.sbt` for sbt 0.13 or `~/.sbt/1.0/plugins/plugins.sbt` for sbt 1.0:
 
 ```scala
-addSbtPlugin("org.hammerlab" % "sbt-dependency-graph" % "0.10.1")
+addSbtPlugin("org.hammerlab" % "sbt-dependency-graph" % "0.10.2")
 ```
 
 To add the plugin only to a single project, put this line into `project/plugins.sbt` of your project, instead.
@@ -23,6 +23,7 @@ the notes of version [0.8.2](https://github.com/jrudolph/sbt-dependency-graph/tr
 
 ## Main Tasks
 
+ * `dependencyBrowseTree`: Opens a browser window with a visualization of the dependency tree (courtesy of jstree).
  * `dependencyTree`: Shows an ASCII tree representation of the project's dependencies (see [below](#dependencyTree-filtering) for examples filtering the output)
  * `dependencyBrowseGraph`: Opens a browser window with a visualization of the dependency graph (courtesy of graphlib-dot + dagre-d3).
  * `dependencyList`: Shows a flat list of all transitive dependencies on the sbt console (sorted by organization and name)
