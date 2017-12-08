@@ -4,6 +4,8 @@
 
 Visualize your project's dependencies.
 
+This is a fork of [jrudolph/sbt-dependency-graph](https://github.com/jrudolph/sbt-dependency-graph) to quickly provide a public release of some `dependencyTree` features (filtering, writing to file); the `org.hammerlab` Maven coordinates below include these.
+
 ## Usage Instructions
 
 sbt-dependency-graph is an informational tool rather than one that changes your build, so you will more than likely wish to
