@@ -22,7 +22,7 @@ import java.nio.file.{ Path, Paths }
 import net.virtualvoid.sbt.graph.GraphTransformations.reverseGraphStartingAt
 import net.virtualvoid.sbt.graph.backend.{ IvyReport, SbtUpdateReport }
 import net.virtualvoid.sbt.graph.model.{ FilterRule, ModuleGraph, ModuleId }
-import net.virtualvoid.sbt.graph.rendering.{ AsciiGraph, AsciiTree, DagreHTML }
+import net.virtualvoid.sbt.graph.rendering.{ AsciiGraph, AsciiTree, DagreHTML, TreeView }
 import net.virtualvoid.sbt.graph.util.IOUtil
 import sbt.Keys._
 import sbt._
@@ -103,12 +103,10 @@ object DependencyGraphSettings {
     dependencyDot := writeToFile(dependencyDotString, dependencyDotFile).value,
     dependencyBrowseGraphTarget := { target.value / "browse-dependency-graph" },
     dependencyBrowseGraphHTML := browseGraphHTMLTask.value,
-    dependencyBrowseGraph := {
-      val uri = dependencyBrowseGraphHTML.value
-      streams.value.log.info("Opening in browser...")
-      java.awt.Desktop.getDesktop.browse(uri)
-      uri
-    },
+    dependencyBrowseGraph := openBrowser(dependencyBrowseGraphHTML).value,
+    dependencyBrowseTreeTarget := { target.value / "browse-dependency-tree" },
+    dependencyBrowseTreeHTML := browseTreeHTMLTask.value,
+    dependencyBrowseTree := openBrowser(dependencyBrowseTreeHTML).value,
     dependencyList := printFromGraph(rendering.FlatList.render(_, _.id.idString)).value,
     dependencyStats := printFromGraph(rendering.Statistics.renderModuleStatsList).value,
     dependencyDotHeader :=
@@ -163,6 +161,14 @@ object DependencyGraphSettings {
       link
     }
 
+  def browseTreeHTMLTask =
+    Def.task {
+      val renderedTree = TreeView.createJson(moduleGraph.value)
+      val link = TreeView.createLink(renderedTree, target.value)
+      streams.value.log.info(s"HTML tree written to $link")
+      link
+    }
+
   def writeToFile(dataTask: TaskKey[String], fileTask: SettingKey[File]) =
     Def.task {
       val outFile = fileTask.value
@@ -179,6 +185,14 @@ object DependencyGraphSettings {
 
   def printFromGraph(f: ModuleGraph ⇒ String) =
     Def.task { streams.value.log.info(f(moduleGraph.value)) }
+
+  def openBrowser(uriKey: TaskKey[URI]) =
+    Def.task {
+      val uri = uriKey.value
+      streams.value.log.info("Opening in browser...")
+      java.awt.Desktop.getDesktop.browse(uri)
+      uri
+    }
 
   def showLicenseInfo(graph: ModuleGraph, streams: TaskStreams) {
     val output =
