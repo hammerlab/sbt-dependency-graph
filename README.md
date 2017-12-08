@@ -77,6 +77,21 @@ dependencyTree foo bar -baz  // include only deps that contain "foo" or "bar" an
 
 In all cases, the full paths to dependencies that match the query are displayed (which can mean that dependencies are displayed even though they would have been excluded in their own right, because they form part of a chain to a dependency that was not excluded). 
 
+#### Writing output to file
+
+`dependencyTree` can have its output written to a file:
+
+```
+$ sbt
+> dependencyTree -o foo
+```
+
+or, directly from the shell:
+
+```bash
+sbt 'dependency-tree -o foo'
+```
+
 ## Configuration settings
 
  * `filterScalaLibrary`: Defines if the scala library should be excluded from the output of the dependency-* functions.

@@ -16,6 +16,9 @@
 
 package net.virtualvoid.sbt.graph
 
+import java.nio.file.Files.newOutputStream
+import java.nio.file.{ Path, Paths }
+
 import net.virtualvoid.sbt.graph.GraphTransformations.reverseGraphStartingAt
 import net.virtualvoid.sbt.graph.backend.{ IvyReport, SbtUpdateReport }
 import net.virtualvoid.sbt.graph.model.{ FilterRule, ModuleGraph, ModuleId }
@@ -46,7 +49,7 @@ object DependencyGraphSettings {
     Seq(Compile, Test, IntegrationTest, Runtime, Provided, Optional).flatMap(ivyReportForConfig)
 
   def ivyReportForConfig(config: Configuration) = inConfig(config)(Seq(
-    ivyReport := { Def.task { ivyReportFunction.value.apply(config.toString) } dependsOn (ignoreMissingUpdate) }.value,
+    ivyReport := { Def.task { ivyReportFunction.value.apply(config.toString) } dependsOn ignoreMissingUpdate }.value,
     crossProjectId := sbt.CrossVersion(scalaVersion.value, scalaBinaryVersion.value)(projectID.value),
     moduleGraphSbt :=
       ignoreMissingUpdate
@@ -80,7 +83,19 @@ object DependencyGraphSettings {
       moduleGraph.value,
       filterRulesParser.parsed: _*
     ),
-    dependencyTree := streams.value.log.info(asciiTree.evaluated),
+    dependencyTree := {
+      val tree = asciiTree.evaluated
+      dependencyTreeOutputPathParser.parsed match {
+        case Some(path) ⇒
+          streams.value.log.info(s"Writing dependency-tree to path: $path")
+          val os = newOutputStream(path)
+          os.write(tree.getBytes)
+          os.close()
+        case _ ⇒
+          streams.value.log.info(tree)
+      }
+
+    },
     dependencyGraphMLFile := { target.value / "dependencies-%s.graphml".format(config.toString) },
     dependencyGraphML := dependencyGraphMLTask.value,
     dependencyDotFile := { target.value / "dependencies-%s.dot".format(config.toString) },
@@ -174,16 +189,26 @@ object DependencyGraphSettings {
       }.mkString("\n\n")
     streams.log.info(output)
   }
-  val shouldForceParser: State ⇒ Parser[Boolean] = { (state: State) ⇒
-    import sbt.complete.DefaultParsers._
 
+  import sbt.complete.DefaultParsers._
+
+  val shouldForceParser: State ⇒ Parser[Boolean] = { (state: State) ⇒
     (Space ~> token("--force")).?.map(_.isDefined)
+  }
+
+  val dependencyTreeOutputPathParser: State ⇒ Parser[Option[Path]] = { (state: State) ⇒
+    (
+      Space ~
+      (token("--out") | token("-o")) ~ Space ~>
+      StringBasic
+    )
+      .map(Paths.get(_))
+      .?
   }
 
   val filterRulesParser: Def.Initialize[State ⇒ Parser[Seq[FilterRule]]] =
     resolvedScoped { ctx ⇒
       (state: State) ⇒
-        import sbt.complete.DefaultParsers._
         (Space ~> token(StringBasic, "filter")).*.map {
           _.map(FilterRule(_))
         }
@@ -194,7 +219,6 @@ object DependencyGraphSettings {
       (state: State) ⇒
         val graph = loadFromContext(moduleGraphStore, ctx, state) getOrElse ModuleGraph(Nil, Nil)
 
-        import sbt.complete.DefaultParsers._
         graph
           .nodes
           .map(_.id)
